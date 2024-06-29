@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist 50 First Tracks</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column; /* Changed to column for a top-down layout */
+        align-items: center; /* Centers content horizontally */
+        background: #f4f4f4;
+    }
+    header, form {
+        width: 80%; /* Set a max width for better control */
+        text-align: center; /* Center the text within header and form */
+        margin: 10px auto; /* Auto margins for horizontal centering */
+    }
+    #content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; /* Ensures content is centered horizontally */
+        width: 80%; /* Control the width of the entire content container */
+        max-width: 1200px; /* Optional: maximum width */
+    }
+    #playlistSection, #iframeSection {
+        flex: 1 1 45%; /* Adjusts basis to no less than 45% of the container width */
+        min-width: 300px;
+        background: white;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        margin: 10px; /* Reduced margin for tighter layout */
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+    th {
+        background-color: #f9f9f9;
+    }
+    iframe {
+        width: 100%;
+        height: 400px;
+        border: none;
+    }
+	button {
+        background-color: #4CAF50; /* Green background */
+        border: none; /* No borders */
+        color: white; /* White text */
+        padding: 15px 32px; /* Top and bottom padding, Left and right padding */
+        text-align: center; /* Center the text inside the button */
+        text-decoration: none; /* No underline */
+        display: inline-block; /* Allows setting dimensions */
+        font-size: 16px; /* Larger text size */
+        margin: 4px 2px; /* Margin around the button */
+        cursor: pointer; /* Pointer cursor on hover */
+        border-radius: 8px; /* Rounded corners */
+        transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+    }
+
+    button:hover {
+        background-color: #45a049; /* Darker shade of green when hovered over */
+    }
+</style>
+
+</head>
+<body>
+    <header>
+        <h1>Spotify Playlist 50 First Tracks - Youtube Video In Browser Copy - In Converter from Youtube Paste - For educational purposes</h1>
+    </header>
+    <div id="content">
+        <div id="playlistSection">
+            <form id="spotifyForm">
+                <label for="playlistLink">Enter Spotify Playlist Link:</label>
+                <input type="text" id="playlistLink" name="playlistLink" required>
+                <button type="button" onclick="getPlaylistTracks()">Get Playlist Tracks</button>
+            </form>
+            <table id="tracksTable">
+                <tr>
+                    <th>Track Name</th>
+                    <th>Artist(s)</th>
+                    <th>Apple Music Link</th>
+                    <th>YouTube Link</th>
+                </tr>
+            </table>
+        </div>
+        <div id="iframeSection">
+            <!-- Iframe to display YouTube search results -->
+            <iframe id="youtubeResultsFrame"></iframe>
+
+            <!-- Downloader iframe -->
+            <iframe id="downloaderFrame" src="https://downloader.vevioz.com/"></iframe>
+        </div>
+    </div>
+
+    <script>
+        async function getPlaylistTracks() {
+            const clientId = '82197ddb4afa412989b07c187e2f28f3';
+            const clientSecret = 'b8773dcde328468f87943e1fdd0a34a7';
+            const playlistLink = document.getElementById('playlistLink').value;
+            const playlistId = playlistLink.split('playlist/')[1].split('?')[0];
+            try {
+                const responseToken = await fetch('https://accounts.spotify.com/api/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`
+                });
+                const dataToken = await responseToken.json();
+                const accessToken = dataToken.access_token;
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                };
+                const responseTracks = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, { headers });
+                const dataTracks = await responseTracks.json();
+                const table = document.getElementById('tracksTable');
+                table.innerHTML = '<tr><th>Track Name</th><th>Artist(s)</th><th>Apple Music Link</th><th>YouTube Link</th></tr>';
+                for (const item of dataTracks.items) {
+                    const track = item.track;
+                    const name = track.name;
+                    const artists = track.artists.map(artist => artist.name).join(', ');
+                    const mediaLinks = getMediaLinks(name, artists);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${name}</td><td>${artists}</td><td><a href="${mediaLinks.iTunes}" target="_blank">Apple Music</a></td><td><a href="#" onclick="showYouTubeResults('${mediaLinks.YouTube}')">YouTube</a></td>`;
+                    document.getElementById('tracksTable').appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error fetching Spotify data:', error);
+            }
+        }
+
+        function getMediaLinks(trackName, artistNames) {
+            const encodedName = encodeURIComponent(trackName + ' ' + artistNames).replace(/%20/g, '+');
+            return {
+                iTunes: `https://music.apple.com/us/search?term=${encodedName}`,
+                YouTube: `https://www.youtube.com/results?search_query=${encodedName}`
+            };
+        }
+
+        function showYouTubeResults(youtubeUrl) {
+            const youtubeResultsFrame = document.getElementById('youtubeResultsFrame');
+            youtubeResultsFrame.src = youtubeUrl;
+        }
+    </script>
+</body>
+</html>
